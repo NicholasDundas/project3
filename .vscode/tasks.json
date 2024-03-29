@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "maketest",
+            "command": "make", 
+            "args": ["test"],
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
+            "dependsOn":["cleanVM", "makeVM"]
+        },
+        {
+            "label": "cleanVM", 
+            "type":"shell",
+            "command":"make",
+            "args": ["clean"],
+            "options": {
+                "cwd": "${workspaceFolder}/"
+            },
+        },
+        {
+            "label": "makeVM",
+            "command": "make", 
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/"
+            },
+        }
+    ]
+}

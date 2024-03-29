@@ -1,13 +1,23 @@
 #include "my_vm.h"
-
+#include <stdlib.h>
+#include <math.h>
 //TODO: Define static variables and structs, include headers, etc.
-
+#define PAGE_SIZE (1UL<<13) // (13 bits for offset)
+uint8_t* mem = NULL; // Phyiscal Memory where we actually store the raw data to be manipulated
+//outer page map for indirection, size of which and offset is determined by PAGE_SIZE
+//Each page entry is 4 bytes with the least sig bits representing the offset and the most sig bits representing the index
+page_ent *outer_page = NULL, *inner_page = NULL; 
 void set_physical_mem(){
-    //TODO: Finish
+    mem = realloc(mem,MEMSIZE);
 }
 
-void * translate(unsigned int vp){
-    //TODO: Finish
+//Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in basep it should point to
+void* translate(void* basep, page_ent* va) {
+    int offsetSize = (int)(log(PAGE_SIZE)/log(2.)); //How many bits are we using for the offset
+    int oPageBitSize = (sizeof(*va) * 8UL); 
+    int index = *va >> offsetSize; //Shifting va by offsetSize in bits mask out offset and get index
+    int offset = (*va << (oPageBitSize - offsetSize)) >> offsetSize; //Shifting bits left then back to mask out the index bits
+    return basep + ((index * PAGE_SIZE) + offset);
 }
 
 unsigned int page_map(unsigned int vp){
