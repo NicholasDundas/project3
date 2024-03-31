@@ -2,16 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "maketest",
-            "command": "make", 
-            "args": ["test"],
-            "type": "shell",
-            "options": {
-                "cwd": "${workspaceFolder}/test"
-            },
-            "dependsOn":["cleanVM", "makeVM"]
-        },
-        {
             "label": "cleanVM", 
             "type":"shell",
             "command":"make",
@@ -27,6 +17,26 @@
             "options": {
                 "cwd": "${workspaceFolder}/"
             },
+            "dependsOn":["cleanVM"]
+        },
+        {
+            "label": "cleantest",
+            "command": "make", 
+            "args": ["clean"],
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
+        },
+        {
+            "label": "maketest",
+            "command": "make", 
+            "args": ["test"],
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
+            "dependsOn":["cleantest","makeVM"]
         }
     ]
 }

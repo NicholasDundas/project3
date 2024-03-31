@@ -1,17 +1,13 @@
 #include <stddef.h>
-#include <stdint.h>
-
-typedef uint32_t page_ent;
-
-#define MAX_MEMSIZE (1UL<<32)
-#define MEMSIZE (1UL<<30)
+#define MAX_MEMSIZE (1ULL<<32)
+#define MEMSIZE (1ULL<<30)
 #define TLB_ENTRIES 256
 
 void set_physical_mem();
 
-void * translate(void* basep, page_ent* va);
+void* translate(unsigned long va);
 
-unsigned int page_map(unsigned int vp);
+void* page_map(unsigned int va);
 
 void * t_malloc(size_t n);
 

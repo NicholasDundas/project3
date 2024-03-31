@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -g -w -c -m32
+CFLAGS = -g -w -m32
 
 test:
-	$(CC) $(CFLAGS) -o test test.c -L../ -lmy_vm
+	$(CC) $(CFLAGS) -o test test.c -L../ -l:my_vm.a -lm 
 clean:
 	rm -rf test *.o *.dSYM
