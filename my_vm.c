@@ -114,13 +114,13 @@ unsigned int page_map(unsigned int va){
     if(mem == NULL) {
         set_physical_mem();
     }
-    unsigned long offset = bitToLong(va,0,offsetSize);
+  //  unsigned long offset = bitToLong(va,0,offsetSize); ignored
     unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     
     if (outer_page[index] == 0) { //no page table found so make it!
         outer_page[index] = get_next_avail();
-        if (outer_page[index] == -1) return 0;
+        if (outer_page[index] == -1) return NULL;
         flip_bit_at_index(&membitmap[outer_page[index] / 8],outer_page[index] % 8); 
         memset(&mem[outer_page[index] * PAGE_SIZE],0,sizeof(page_ent)*(1ULL<<innerBitSize));
     }
@@ -128,11 +128,11 @@ unsigned int page_map(unsigned int va){
     if ((*(page_ent*)&mem[inner_page_addr]) == 0) { //no page associated with inner level offset so create an entry !
         page_ent temp = get_next_avail();
         memcpy(&mem[inner_page_addr],&temp,sizeof(page_ent));
-        if ((*(page_ent*)&mem[inner_page_addr]) == -1) return 0;
+        if ((*(page_ent*)&mem[inner_page_addr]) == -1) return NULL;
         flip_bit_at_index(&membitmap[temp / 8],temp % 8); 
         memset(&mem[temp * PAGE_SIZE],0,(1ULL<<offsetSize));
     }
-    return (*(page_ent*)&mem[inner_page_addr]);
+    return &mem[inner_page_addr * PAGE_SIZE];
 }
 
 unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset) {
