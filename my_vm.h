@@ -10,7 +10,7 @@ void* translate(unsigned long va);
 
 unsigned int page_map(unsigned int va);
 
-unsigned long t_malloc(size_t n);
+void* t_malloc(size_t n);
 
 int t_free(unsigned int vp, size_t n);
 

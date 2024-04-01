@@ -17,7 +17,7 @@ typedef uint32_t page_ent;
 
 uint8_t* mem = NULL; // Phyiscal Memory where we actually store the raw data to be manipulated
 uint8_t* membitmap = NULL; //Every bit indicates whether a page is full (MEMSIZE/PAGE_SIZE)
-page_ent* outer_page; //Stores pointers to a start of a inner page tables
+page_ent* outer_page; //Stores page numbers mapped to inner page tables
 unsigned int page_table_size; //Size of page table in pages
 unsigned long long pageAmt; //How many pages in Memory
 unsigned int offsetSize; //How many bits for offset? (MAX_MEMSIZE/PAGE_SIZE)
@@ -158,10 +158,10 @@ unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_in
 
 //finds next virtual address large enough for n pages
 page_ent findContSpace(size_t n) {
-    unsigned long count = 0;
-    page_ent va = 0;
-    unsigned long page_dir_index = 0;
-    unsigned long page_table_index = page_table_size;
+    unsigned long count = 0; //keeps track of how many contigous pages we allocated
+    page_ent va = 0; //virtual address we return
+    unsigned long page_dir_index = 0; //index into page directory
+    unsigned long page_table_index = page_table_size; //index into page table (we start after the pages allocated for page directory)
     while(n > count && page_dir_index < (1ULL<<outerBitSize)) {
         if(outer_page[page_dir_index] == 0) { //Empty page dir, assume we allocate it entirely
             if(!va) va = indexToVA(page_dir_index,page_table_index,0);
@@ -191,17 +191,18 @@ page_ent findContSpace(size_t n) {
     return va;
     
 }
-unsigned long t_malloc(size_t n) {
+
+void* t_malloc(size_t n) {
     if(mem == NULL) {
         set_physical_mem();
     }
-    if(n == 0) return (void*)0; //Allocate nothing
+    if(n == 0) return NULL; //Allocate nothing
     unsigned long req_pages = n / PAGE_SIZE + (n % PAGE_SIZE ? 1 : 0);
     page_ent va = findContSpace(req_pages);
-    if(!va) return 0;
+    if(!va) return 0; //No contigous space available
     unsigned long inner_index = bitToLong(va,offsetSize,innerBitSize);
     unsigned long page_dir_index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
-    while(req_pages--) {
+    while(req_pages--) { //allocate all the required pages
         if(inner_index > (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
@@ -209,9 +210,8 @@ unsigned long t_malloc(size_t n) {
         page_map(indexToVA(page_dir_index,inner_index,0));
         inner_index++;
     }
-    return va;
+    return (void*)va;
 }
-
 
 int t_free(unsigned int vp, size_t n){
     //TODO: Finish
