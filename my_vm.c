@@ -1,3 +1,9 @@
+/* List all group member's name:
+ * Nicholas Dundas npd59
+ * Logan Miller lrm154
+*/
+
+
 #include "my_vm.h"
 #include <stdint.h> //uint32_t, uint8_t
 #include <stdlib.h> //malloc, NULL
