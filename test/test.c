@@ -1,10 +1,8 @@
 #include "../my_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
 int main() {
-    srand(time(NULL));
 
     set_physical_mem();
     
