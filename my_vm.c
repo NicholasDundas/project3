@@ -4,13 +4,13 @@
 #include <math.h> //log2
 #include <string.h> //memset
 //TODO: Define static variables and structs, include headers, etc.
-#define PAGE_SIZE (1ULL<<8) 
+#define PAGE_SIZE (1ULL<<13) 
 #define NULL_PAGE -1
 typedef uint32_t page_ent;
 
 uint8_t* mem = NULL; // Phyiscal Memory where we actually store the raw data to be manipulated
 uint8_t* membitmap = NULL; //Every bit indicates whether a page is full (MEMSIZE/PAGE_SIZE)
-page_ent** outer_page; //Stores pointers to a start of a inner page tables
+page_ent* outer_page; //Stores pointers to a start of a inner page tables
 unsigned long long pageAmt; //How many pages in Memory
 unsigned int offsetSize; //How many bits for offset? (MAX_MEMSIZE/PAGE_SIZE)
 unsigned int innerBitSize; //How many bits for innerPage? 
@@ -55,8 +55,6 @@ unsigned long bitToLong(unsigned long num, unsigned int start, unsigned int len)
     return ((1 << len) - 1) & (num >> start);
 }
 
-
-
 void set_physical_mem(){
     pageAmt = MEMSIZE/PAGE_SIZE; //num of pages for physical memory
     offsetSize = (unsigned int)log2l(PAGE_SIZE);
@@ -66,20 +64,26 @@ void set_physical_mem(){
     mem = malloc(MEMSIZE);
     membitmap = malloc(pageAmt/8ULL); 
     memset(membitmap,-1,pageAmt/8ULL);
-    outer_page = malloc((1ULL<<outerBitSize)*sizeof(*outer_page));
-    memset(outer_page,NULL,sizeof(page_ent)*(1ULL<<outerBitSize));
+    outer_page = mem;
+    for(int i = 0; i < (int)ceil(outerBitSize/(double)offsetSize); i++) {
+        flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for outer page directory
+    }
+    memset(outer_page,0,sizeof(page_ent)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 IE nothing
 }
 
 
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in basep it should point to
 void* translate(unsigned long va) {
     unsigned long offset = bitToLong(va,0,offsetSize);
-    unsigned long virtpagenum = bitToLong(va,offsetSize,innerBitSize);
+    unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
 
-    return (void*)&mem[outer_page[index][virtpagenum] * PAGE_SIZE + offset];
+    unsigned long inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset]; //points to some frame
+    
+    return &mem[inner_page * PAGE_SIZE + offset];
 }
 
+//returns next available page number
 page_ent get_next_avail() {
     for(page_ent i = 0; i < pageAmt; i++) {
         if(membitmap[i] == 0) continue;
@@ -89,24 +93,27 @@ page_ent get_next_avail() {
 }
 
 //attempts to map a page with a given virtual address
-//returns pointer to mapped memory or NULL if failed
-void* page_map(unsigned int va){
+//returns new page number
+//returns 0 on failure
+unsigned int page_map(unsigned int va){
     unsigned long offset = bitToLong(va,0,offsetSize);
-    unsigned long virtpagenum = bitToLong(va,offsetSize,innerBitSize);
+    unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     
-    if (outer_page[index] == NULL) { //no page table found so make it!
-        outer_page[index] = malloc((1ULL<<innerBitSize)*sizeof(**outer_page));
-        memset(outer_page[index],NULL_PAGE,sizeof(**outer_page)*(1ULL<<innerBitSize));
+    if (outer_page[index] == 0) { //no page table found so make it!
+        outer_page[index] = get_next_avail();
+        if (outer_page[index] == -1) return 0;
+        flip_bit_at_index(&membitmap[outer_page[index] / 8],outer_page[index] % 8); 
+        memset(&mem[outer_page[index] * PAGE_SIZE],0,sizeof(page_ent)*(1ULL<<innerBitSize));
     }
-    if (outer_page[index][virtpagenum] == NULL_PAGE) {
-        outer_page[index][virtpagenum] = get_next_avail();
-        if(outer_page[index][virtpagenum] != -1) { //free space found
-            flip_bit_at_index(&membitmap[outer_page[index][virtpagenum] / 8],outer_page[index][virtpagenum] % 8);
-            return translate(va);
-        }
+    unsigned long inner_page_addr = outer_page[index] * PAGE_SIZE + inner_offset; //points to some frame
+    if (mem[inner_page_addr] == 0) { //no page associated with inner level offset create !
+        mem[inner_page_addr] = get_next_avail();
+        if (mem[inner_page_addr] == -1) return 0;
+        flip_bit_at_index(&membitmap[mem[inner_page_addr] / 8],mem[inner_page_addr] % 8); 
+        memset(&mem[mem[inner_page_addr] * PAGE_SIZE],0,(1ULL<<offsetSize));
     }
-    return NULL;
+    return mem[inner_page_addr];
 }
 
 void * t_malloc(size_t n){

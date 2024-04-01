@@ -7,7 +7,7 @@ void set_physical_mem();
 
 void* translate(unsigned long va);
 
-void* page_map(unsigned int va);
+unsigned int page_map(unsigned int va);
 
 void * t_malloc(size_t n);
 
