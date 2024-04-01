@@ -25,7 +25,7 @@
             "args": ["clean"],
             "type": "shell",
             "options": {
-                "cwd": "${workspaceFolder}/test"
+                "cwd": "${workspaceFolder}/benchmarks"
             },
         },
         {
@@ -34,7 +34,7 @@
             "args": ["test"],
             "type": "shell",
             "options": {
-                "cwd": "${workspaceFolder}/test"
+                "cwd": "${workspaceFolder}/benchmarks"
             },
             "dependsOn":["cleanTest","makeVM"]
         }

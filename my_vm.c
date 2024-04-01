@@ -209,12 +209,31 @@ void* t_malloc(size_t n) {
         }
         page_map(indexToVA(page_dir_index,inner_index,0));
         inner_index++;
+
     }
     return (void*)va;
 }
 
+unsigned int tu_malloc(size_t n) {
+    return (unsigned int)t_malloc(n);
+}
+
 int t_free(unsigned int vp, size_t n){
-    //TODO: Finish
+    unsigned long req_pages = n / PAGE_SIZE + (n % PAGE_SIZE ? 1 : 0);
+    unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
+    unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    if(outer_page[page_dir_index] == 0) return -1;
+    while(req_pages--) { //deallocate all the required pages
+        if(inner_index > (1ULL<<innerBitSize)) {
+            inner_index = 0;
+            page_dir_index++;
+        }
+        unsigned long page = (*(page_ent*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(page_ent)]);
+        if(page == 0) return -1;
+        flip_bit_at_index(&membitmap[page / 8],page % 8); 
+        inner_index++;
+    }
+    return 0;
 }
 
 int put_value(unsigned int vp, void *val, size_t n){

@@ -9,7 +9,6 @@ int main() {
     set_physical_mem();
     
     void* tests[7];
-        //                  222222111111111110000000000000
     tests[0] = t_malloc(300*PAGE_SIZE);
     tests[1] = t_malloc(300*PAGE_SIZE);
     tests[2] = t_malloc(300*PAGE_SIZE);

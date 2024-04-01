@@ -9,7 +9,7 @@
             "name": "Launch and debug test.c",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/test/test",
+            "program": "${workspaceFolder}/benchmarks/test",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/",

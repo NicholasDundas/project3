@@ -1,3 +1,6 @@
+#ifndef MY_VM_H
+#define MY_VM_H
+
 #include <stddef.h>
 #include <stdint.h>
 #define MAX_MEMSIZE (1ULL<<32)
@@ -26,6 +29,7 @@ int check_TLB(unsigned int vpage);
 
 void print_TLB_missrate();
 
-
+unsigned int tu_malloc(size_t n);
 unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset);
 void print_va(unsigned long va);
+#endif
