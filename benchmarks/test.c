@@ -2,15 +2,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#define PAGE_SIZE (1<<13)
+
 int main() {
+
     set_physical_mem();
     
-    unsigned int test;
-    int i = 5, res;
-    test = tu_malloc(sizeof(i));
-    put_value(test, &i, sizeof(i));
-    get_value(test, &res, sizeof(res));
-    test = t_free(test,sizeof(i));
-    printf("Got value: %d",res);
+    void* tests[7];
+    tests[0] = t_malloc(300*PAGE_SIZE);
+    tests[1] = t_malloc(300*PAGE_SIZE);
+    tests[2] = t_malloc(300*PAGE_SIZE);
+    tests[3] = t_malloc(4096*PAGE_SIZE);
+    tests[4] = t_malloc((1ULL<<30));
+    tests[5] = t_malloc(50);
+    tests[6] = t_malloc(1);
+    for(int i = 0; i < sizeof(tests)/sizeof(tests[0]); i++) {
+        printf("Tests[%d]: %p\n",i,tests[i]);
+        print_va((unsigned int)tests[i]);
+    }
+    
     return 0;
 }

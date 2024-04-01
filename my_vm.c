@@ -135,24 +135,11 @@ unsigned int page_map(unsigned int va){
     return &mem[inner_page_addr * PAGE_SIZE];
 }
 
-unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset) {
-    unsigned int num = 0;
-    int i;
-    for(i = 0; i < offsetSize; i++) {
-        if(get_bit_at_index(&offset,i)) {
-            flip_bit_at_index(&num,i);
-        }
-    }
-    for(; i < offsetSize + innerBitSize; i++) {
-        if(get_bit_at_index(&page_table_index,i - offsetSize)) {
-            flip_bit_at_index(&num,i);
-        }
-    }
-    for(; i < offsetSize + innerBitSize + outerBitSize; i++) {
-        if(get_bit_at_index(&page_dir_index,(i - offsetSize) - innerBitSize)) {
-            flip_bit_at_index(&num,i);
-        }
-    }
+unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset) { 
+    unsigned long offsetmask = ((1ULL<<offsetSize)-1) & offset;
+    unsigned long page_table_index_mask = ((1ULL<<innerBitSize+offsetSize)-1) & (page_table_index<<offsetSize);
+    unsigned long page_dir_index_mask = ((1ULL<<innerBitSize+offsetSize+outerBitSize)-1) & (page_dir_index<<innerBitSize+offsetSize);
+    unsigned long num = (page_dir_index_mask | page_table_index_mask |  offsetmask);
     return num;
 }
 
