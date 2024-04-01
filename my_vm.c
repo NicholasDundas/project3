@@ -74,11 +74,11 @@ void set_physical_mem(){
     for(int i = 0; i < (int)ceil(outerBitSize/(double)offsetSize); i++) {
         flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for outer page directory
     }
-    memset(outer_page,0,sizeof(page_ent)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 IE nothing
+    memset(outer_page,0,sizeof(page_ent)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
 }
 
 
-//Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in basep it should point to
+//Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
 void* translate(unsigned long va) {
     unsigned long offset = bitToLong(va,0,offsetSize);
     unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
@@ -99,7 +99,7 @@ page_ent get_next_avail() {
 }
 
 //attempts to map a page with a given virtual address
-//returns new page number
+//returns new page number allocated
 //returns 0 on failure
 unsigned int page_map(unsigned int va){
     unsigned long offset = bitToLong(va,0,offsetSize);
