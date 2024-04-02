@@ -2,24 +2,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#define PAGE_SIZE (1<<13)
-
+#include <string.h>
 int main() {
-
     set_physical_mem();
     
-    void* tests[7];
-    tests[0] = t_malloc(300*PAGE_SIZE);
-    tests[1] = t_malloc(300*PAGE_SIZE);
-    tests[2] = t_malloc(300*PAGE_SIZE);
-    tests[3] = t_malloc(4096*PAGE_SIZE);
-    tests[4] = t_malloc((1ULL<<30));
-    tests[5] = t_malloc(50);
-    tests[6] = t_malloc(1);
-    for(int i = 0; i < sizeof(tests)/sizeof(tests[0]); i++) {
-        printf("Tests[%d]: %p\n",i,tests[i]);
-        print_va((unsigned int)tests[i]);
-    }
-    
+    unsigned int test;
+    uint8_t* i = malloc(1<<13);
+    uint8_t b[(1<<13)];
+    memset(i,'A',(1<<13));
+    test = tu_malloc((1<<13));
+    put_value(test, &i, (1<<13));
+    FILE* f = fopen("out.txt","w");
+    print_mem(f);
+    get_value(test, &b, (1<<13));
+    test = t_free(test,(1<<13));
+    printf("Got value: %c\n",b[4000]);
+    fclose(f);
     return 0;
 }

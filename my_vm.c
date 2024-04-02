@@ -95,7 +95,7 @@ void* translate(unsigned long va) {
 
     unsigned long inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(page_ent)]; //points to some frame
     
-    return &mem[inner_page * PAGE_SIZE + offset];
+    return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
 
 //returns next available page number
@@ -114,7 +114,7 @@ unsigned int page_map(unsigned int va){
     if(mem == NULL) {
         set_physical_mem();
     }
-  //  unsigned long offset = bitToLong(va,0,offsetSize); ignored
+  //  unsigned long offset = bitToLong(va,0,offsetSize); // ignored
     unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     
@@ -130,7 +130,7 @@ unsigned int page_map(unsigned int va){
         memcpy(&mem[inner_page_addr],&temp,sizeof(page_ent));
         if ((*(page_ent*)&mem[inner_page_addr]) == -1) return NULL;
         flip_bit_at_index(&membitmap[temp / 8],temp % 8); 
-        memset(&mem[temp * PAGE_SIZE],0,(1ULL<<offsetSize));
+       // memset(&mem[temp * PAGE_SIZE],0,(1ULL<<offsetSize)); // no point in setting phyiscal pages to zero, leave that to user
     }
     return &mem[inner_page_addr * PAGE_SIZE];
 }
@@ -139,7 +139,7 @@ unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_in
     unsigned long offsetmask = ((1ULL<<offsetSize)-1) & offset;
     unsigned long page_table_index_mask = ((1ULL<<innerBitSize+offsetSize)-1) & (page_table_index<<offsetSize);
     unsigned long page_dir_index_mask = ((1ULL<<innerBitSize+offsetSize+outerBitSize)-1) & (page_dir_index<<innerBitSize+offsetSize);
-    unsigned long num = (page_dir_index_mask | page_table_index_mask |  offsetmask);
+    unsigned long num = (page_dir_index_mask | page_table_index_mask | offsetmask);
     return num;
 }
 
@@ -170,8 +170,10 @@ page_ent findContSpace(size_t n) {
             page_table_index++;        
             count++;
         }
-        page_table_index = 0;
-        page_dir_index++;
+        if(page_table_index >= (1ULL<<innerBitSize)) {
+            page_table_index = 0;
+            page_dir_index++;
+        }
     }
     if(n > count) //still not enough pages!
         return 0;
@@ -198,6 +200,7 @@ void* t_malloc(size_t n) {
         inner_index++;
 
     }
+    translate(va);
     return (void*)va;
 }
 
@@ -224,27 +227,29 @@ int t_free(unsigned int vp, size_t n){
 }
 
 int put_value(unsigned int vp, void *val, size_t n) {
-    if (val == NULL)
+    if (val == NULL || vp == 0)
         return -1; // Invalid input
-    
-    unsigned char *src = (unsigned char *)val;
-    unsigned char *dst = (unsigned char *)translate(vp);
-    
-    if (dst == NULL)
-        return -1; // unable to translate virtual pointer
-    
-    // check if the location is already in use
-    for (size_t i = 0; i < n; i++) {
-        if (dst[i] != 0) { // location is in use
-            return -1;
+    size_t left = n; //how many bytes left to allocate
+    unsigned long req_pages = n / PAGE_SIZE;
+    unsigned long offset = bitToLong(vp,0,offsetSize);
+    unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
+    unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned long page;
+    if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
+    while(req_pages--) { 
+        page = (*(page_ent*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(page_ent)]);
+        if(page == 0) return -1; //invalid page found
+        memmove(&mem[page * PAGE_SIZE + offset],&((uint8_t*)val)[n-left],PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
+        n-=PAGE_SIZE-offset;
+        offset = 0;
+        inner_index++;
+        if(inner_index > (1ULL<<innerBitSize)) {
+            inner_index = 0;
+            page_dir_index++;
         }
     }
-    
-    // copy bits into location of size n
-    for (size_t i = 0; i < n; i++) {
-        dst[i] = src[i];
-    }
-    
+    page = (*(page_ent*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(page_ent)]); //copy remaining bytes
+    memmove(&mem[page * PAGE_SIZE + offset],&((uint8_t*)val)[n-left],left); 
     return 0; // successful write
 }
 
@@ -279,4 +284,8 @@ int check_TLB(unsigned int vpage){
 
 void print_TLB_missrate(){
     //TODO: Finish
+}
+
+void print_mem(FILE* f) {
+
 }

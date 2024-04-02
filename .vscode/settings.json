@@ -5,7 +5,8 @@
         "cmath": "c",
         "chrono": "c",
         "variant": "c",
-        "ratio": "c"
+        "ratio": "c",
+        "*.tcc": "c"
     },
     "cmake.configureOnOpen": false
 }

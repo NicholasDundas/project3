@@ -18,7 +18,7 @@ int main() {
     int res = t_free((unsigned int)test,3);
     printf("test freed:%d\n",*(int*)translate((unsigned int)test));
     printf("prev freed:%d\n",*(int*)translate((unsigned int)prev));
-    printf("t_free returned:%d",res);
+    printf("t_free returned:%d\n",res);
     test = t_malloc(3);
     printf("test malloc'd 2nd:%d\n",*(int*)translate((unsigned int)test));
     printf("prev malloc'd 2nd:%d\n",*(int*)translate((unsigned int)prev));

@@ -32,4 +32,5 @@ void print_TLB_missrate();
 unsigned int tu_malloc(size_t n);
 unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset);
 void print_va(unsigned long va);
+void print_mem();
 #endif
