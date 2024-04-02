@@ -87,13 +87,14 @@ void print_va(unsigned long va) {
     printf("offset:%lu\ninner_offset:%lu\npage_dir_offset:%lu\n",offset,inner_offset,index);
 }
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
+//if an invalid address is given it returns &mem
 void* translate(unsigned long va) {
     unsigned long offset = bitToLong(va,0,offsetSize);
     unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
-
+    if(outer_page[index] == 0) return &mem;
     unsigned long inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(page_ent)]; //points to some frame
-    
+    if(inner_page == 0) return &mem;
     return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
 
@@ -287,6 +288,3 @@ void print_TLB_missrate(){
     //TODO: Finish
 }
 
-void print_mem(FILE* f) {
-
-}
