@@ -6,7 +6,8 @@
         "chrono": "c",
         "variant": "c",
         "ratio": "c",
-        "*.tcc": "c"
+        "*.tcc": "c",
+        "bitset": "c"
     },
     "cmake.configureOnOpen": false
 }

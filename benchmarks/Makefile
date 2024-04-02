@@ -1,8 +1,10 @@
 CC = gcc
 CFLAGS = -g -w -m32
 
-all:: clean test bitTests testandfree largemallocs putgettest
+all:: clean test bitTests testandfree largemallocs putgettest largeputget
 
+largeputget:
+	$(CC) $(CFLAGS) -o largeputget largeputget.c -L../ -l:my_vm.a -lm 
 putgettest:
 	$(CC) $(CFLAGS) -o putgettest putgettest.c -L../ -l:my_vm.a -lm 
 largemallocs:
@@ -14,4 +16,4 @@ bitTests:
 test:
 	$(CC) $(CFLAGS) -o test test.c -L../ -l:my_vm.a -lm 
 clean:
-	rm -rf putgettest largemallocs testandfree bittests test *.o *.dSYM
+	rm -rf largeputget putgettest largemallocs testandfree bittests test *.o *.dSYM

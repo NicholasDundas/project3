@@ -92,9 +92,9 @@ void* translate(unsigned long va) {
     unsigned long offset = bitToLong(va,0,offsetSize);
     unsigned long inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned long index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
-    if(outer_page[index] == 0) return &mem;
+    if(outer_page[index] == 0) return NULL;
     unsigned long inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(page_ent)]; //points to some frame
-    if(inner_page == 0) return &mem;
+    if(inner_page == 0) return NULL;
     return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
 
@@ -238,8 +238,8 @@ int put_value(unsigned int vp, void *val, size_t n) {
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
     while(req_pages--) {   
         dst = translate(indexToVA(page_dir_index,inner_index,offset));
-        if(dst == &mem) return -1; //invalid page found
-        memcpy(dst,&((uint8_t*)val)[n-left],4096); //Copy PAGE_SIZE of memory (offset incase we index into page)
+        if(dst == NULL) return -1; //invalid page found
+        memmove(dst,&((uint8_t*)val)[n-left],PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
         left-=PAGE_SIZE-offset;
         offset = 0;
         inner_index++;
@@ -248,28 +248,42 @@ int put_value(unsigned int vp, void *val, size_t n) {
             page_dir_index++;
         }
     }
-    if(left > 0) {
-        dst = translate(indexToVA(page_dir_index,inner_index,offset)); //copy remaining bytes
-        memcpy(dst,&((uint8_t*)val)[n-left],left); 
+    if(left > 0) { //copy remaining bytes
+        dst = translate(indexToVA(page_dir_index,inner_index,offset)); 
+        if(dst == NULL) return -1; //invalid page found
+        memmove(dst,&((uint8_t*)val)[n-left],left); 
     }
     return 0; // successful write
 }
 
 int get_value(unsigned int vp, void *dst, size_t n) {
-    if (dst == NULL)
+    if (dst == NULL || vp == 0)
         return -1; // Invalid input
-    
-    unsigned char *src = (unsigned char *)translate(vp);
-    
-    if (src == NULL)
-        return -1; // Unable to translate virtual address
-    
-    // Copy data from memory to destination
-    for (size_t i = 0; i < n; i++) {
-        ((unsigned char *)dst)[i] = src[i];
+    size_t left = n; //how many bytes left to allocate
+    unsigned long req_pages = n / PAGE_SIZE;
+    unsigned long offset = bitToLong(vp,0,offsetSize);
+    unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
+    unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    void* src;
+    if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
+    while(req_pages--) {   
+        src = translate(indexToVA(page_dir_index,inner_index,offset));
+        if(src == NULL) return -1; //invalid page found
+        memmove(&((uint8_t*)dst)[n-left],src,PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
+        left-=PAGE_SIZE-offset;
+        offset = 0;
+        inner_index++;
+        if(inner_index > (1ULL<<innerBitSize)) {
+            inner_index = 0;
+            page_dir_index++;
+        }
     }
-    
-    return 0; // Successful read
+    if(left > 0) { //copy remaining bytes
+        src = translate(indexToVA(page_dir_index,inner_index,offset)); 
+        if(src == NULL) return -1; //invalid page found
+        memmove(&((uint8_t*)dst)[n-left],src,left); 
+    }
+    return 0; // successful write
 }
 
 void mat_mult(unsigned int a, unsigned int b, unsigned int c, size_t l, size_t m, size_t n){
