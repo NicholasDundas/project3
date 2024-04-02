@@ -223,12 +223,46 @@ int t_free(unsigned int vp, size_t n){
     return 0;
 }
 
-int put_value(unsigned int vp, void *val, size_t n){
-    //TODO: Finish
+int put_value(unsigned int vp, void *val, size_t n) {
+    if (val == NULL)
+        return -1; // Invalid input
+    
+    unsigned char *src = (unsigned char *)val;
+    unsigned char *dst = (unsigned char *)translate(vp);
+    
+    if (dst == NULL)
+        return -1; // unable to translate virtual pointer
+    
+    // check if the location is already in use
+    for (size_t i = 0; i < n; i++) {
+        if (dst[i] != 0) { // location is in use
+            return -1;
+        }
+    }
+    
+    // copy bits into location of size n
+    for (size_t i = 0; i < n; i++) {
+        dst[i] = src[i];
+    }
+    
+    return 0; // successful write
 }
 
-int get_value(unsigned int vp, void *dst, size_t n){
-    //TODO: Finish
+int get_value(unsigned int vp, void *dst, size_t n) {
+    if (dst == NULL)
+        return -1; // Invalid input
+    
+    unsigned char *src = (unsigned char *)translate(vp);
+    
+    if (src == NULL)
+        return -1; // Unable to translate virtual address
+    
+    // Copy data from memory to destination
+    for (size_t i = 0; i < n; i++) {
+        ((unsigned char *)dst)[i] = src[i];
+    }
+    
+    return 0; // Successful read
 }
 
 void mat_mult(unsigned int a, unsigned int b, unsigned int c, size_t l, size_t m, size_t n){
