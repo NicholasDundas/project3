@@ -12,7 +12,6 @@
 #include <stdio.h> //printf
 //TODO: Define static variables and structs, include headers, etc.
 #define PAGE_SIZE (1ULL<<13) 
-#define NULL_PAGE -1
 typedef uint32_t page_ent;
 
 uint8_t* mem = NULL; // Phyiscal Memory where we actually store the raw data to be manipulated
@@ -234,13 +233,13 @@ int put_value(unsigned int vp, void *val, size_t n) {
     unsigned long offset = bitToLong(vp,0,offsetSize);
     unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
     unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
-    unsigned long page;
+    void* dst;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
-    while(req_pages--) { 
-        page = (*(page_ent*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(page_ent)]);
-        if(page == 0) return -1; //invalid page found
-        memmove(&mem[page * PAGE_SIZE + offset],&((uint8_t*)val)[n-left],PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
-        n-=PAGE_SIZE-offset;
+    while(req_pages--) {   
+        dst = translate(indexToVA(page_dir_index,inner_index,offset));
+        if(dst == &mem) return -1; //invalid page found
+        memcpy(dst,&((uint8_t*)val)[n-left],4096); //Copy PAGE_SIZE of memory (offset incase we index into page)
+        left-=PAGE_SIZE-offset;
         offset = 0;
         inner_index++;
         if(inner_index > (1ULL<<innerBitSize)) {
@@ -248,8 +247,10 @@ int put_value(unsigned int vp, void *val, size_t n) {
             page_dir_index++;
         }
     }
-    page = (*(page_ent*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(page_ent)]); //copy remaining bytes
-    memmove(&mem[page * PAGE_SIZE + offset],&((uint8_t*)val)[n-left],left); 
+    if(left > 0) {
+        dst = translate(indexToVA(page_dir_index,inner_index,offset)); //copy remaining bytes
+        memcpy(dst,&((uint8_t*)val)[n-left],left); 
+    }
     return 0; // successful write
 }
 
