@@ -5,9 +5,9 @@
 
 
 #include "my_vm.h"
-#include <stdlib.h> //malloc
-#include <math.h> //log2, ceil
-#include <string.h> //memset
+#include <stdlib.h> //malloc, free
+#include <math.h> //log2
+#include <string.h> //memset, memmove
 #include <stdio.h> //printf
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given
@@ -70,7 +70,7 @@ void cleanup(void) {
     free(mem);
     free(membitmap);
 }
-
+char* data;
 void set_physical_mem(void){
     pageAmt = MEMSIZE/PAGE_SIZE; //num of pages for physical memory
     offsetSize = (unsigned int)log2l(PAGE_SIZE);
@@ -91,6 +91,7 @@ void set_physical_mem(void){
     for(;i < page_dir_size + tlb_size;i++) {
         flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for tlb
     }
+    data = &mem[(page_dir_size+tlb_size)  *PAGE_SIZE];
     memset(outer_page,0,sizeof(unsigned int)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
     atexit(cleanup);
 }
@@ -105,17 +106,18 @@ void print_va(unsigned int va) {
 //if an invalid address is given it returns &mem
 void* translate(unsigned int va) {
     unsigned int offset = bitToLong(va,0,offsetSize);
-    if(check_TLB((va >> offsetSize))) {
+    if(0 && check_TLB((va >> offsetSize))) {
         tlb_hit++;
         return (void*)&mem[tlb[(va >> offsetSize) % TLB_ENTRIES].pp * PAGE_SIZE + offset];
     }
     unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     if(outer_page[index] == 0) return NULL;
-    unsigned int inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(unsigned int)]; //points to some frame
+    unsigned int inner_page = *(unsigned int*)&mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(unsigned int)]; //points to some frame
     tlb_miss++;
     add_TLB((va >> offsetSize),inner_page);
     if(inner_page == 0) return NULL;
+    void* test = (void*)&mem[inner_page * PAGE_SIZE + offset];
     return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
 
@@ -344,7 +346,8 @@ void print_TLB_missrate(void){
 }
 
 //DEBUG FUNCTIONS
-//No need to cast
+
+//No need to cast, directly get a unsigned int from t_malloc
 unsigned int tu_malloc(size_t n) {
     return (unsigned int)t_malloc(n);
 }
@@ -355,13 +358,15 @@ void print_mem(void) {
     printf("PT = Page Table, PP = Physical Page\n");
     printf("Number indicates Physical Page\n");
     int empty = 1;
-    for(size_t i = 0; i < page_dir_size; i++) {
+    for(size_t i = 0; i < (1ULL<<outerBitSize); i++) {
         if(outer_page[i] != 0) {
             empty = 0;
             printf("  PT:%u\n",outer_page[i]);
+            if(get_bit_at_index(&membitmap[outer_page[i] / 8], outer_page[i] % 8) == 1) printf(" (Possible write error?)");
             for(size_t y = 0; y < (1<<innerBitSize);y++) {
                 if(*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] != 0) {
                     printf("    PP:%u\n",*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)]);
+                    if(get_bit_at_index(&membitmap[*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] / 8], *(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] % 8) == 1) printf(" (Possible write error?)");
                 }
             }
         }

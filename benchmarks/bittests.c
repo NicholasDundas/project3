@@ -1,4 +1,5 @@
 #include "../my_vm.h"
+#include <math.h>
 #include <stdio.h>
 int main() {
     for(unsigned int page_bit_size = 1; page_bit_size <= 32;page_bit_size++) {

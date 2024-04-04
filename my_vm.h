@@ -30,6 +30,7 @@ int check_TLB(unsigned int vpage);
 
 void print_TLB_missrate(void);
 
+//DEBUG FUNCTIONS
 //wrapper for t_malloc equivalent to (unsigned int)t_malloc(n)
 unsigned int tu_malloc(size_t n);
 //print a virtual address into its components
