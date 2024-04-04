@@ -9,7 +9,7 @@
 #include <math.h> //log2, ceil
 #include <string.h> //memset
 #include <stdio.h> //printf
-#define PAGE_SIZE (1ULL<<13) 
+#define PAGE_SIZE (1ULL<<4) 
 
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given
@@ -207,12 +207,12 @@ void* t_malloc(size_t n) {
     unsigned int inner_index = bitToLong(va,offsetSize,innerBitSize);
     unsigned int page_dir_index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     while(req_pages--) { //allocate all the required pages
-        if(inner_index > (1ULL<<innerBitSize)) {
+        page_map(indexToVA(page_dir_index,inner_index,0));
+        inner_index++;
+        if(inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }
-        page_map(indexToVA(page_dir_index,inner_index,0));
-        inner_index++;
 
     }
     return (void*)va;
@@ -233,7 +233,11 @@ int t_free(unsigned int vp, size_t n){
     unsigned int page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
     if(outer_page[page_dir_index] == 0) return -1;
     while(req_pages--) { //deallocate all the required pages
-        if(inner_index > (1ULL<<innerBitSize)) {
+        unsigned int page = (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]);
+        if(page == 0) return -1;
+        flip_bit_at_index(&membitmap[page / 8],page % 8); 
+        inner_index++;
+        if(inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             if(is_page_table_empty(outer_page[page_dir_index])) {
                 flip_bit_at_index(&membitmap[outer_page[page_dir_index] / 8],outer_page[page_dir_index] % 8);
@@ -241,10 +245,6 @@ int t_free(unsigned int vp, size_t n){
             }
             page_dir_index++;
         }
-        unsigned int page = (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]);
-        if(page == 0) return -1;
-        flip_bit_at_index(&membitmap[page / 8],page % 8); 
-        inner_index++;
     }
     if(is_page_table_empty(outer_page[page_dir_index])) {
         flip_bit_at_index(&membitmap[outer_page[page_dir_index] / 8],outer_page[page_dir_index] % 8);
@@ -270,7 +270,7 @@ int put_value(unsigned int vp, void *val, size_t n) {
         left-=PAGE_SIZE-offset;
         offset = 0;
         inner_index++;
-        if(inner_index > (1ULL<<innerBitSize)) {
+        if(inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }
@@ -300,7 +300,7 @@ int get_value(unsigned int vp, void *dst, size_t n) {
         left-=PAGE_SIZE-offset;
         offset = 0;
         inner_index++;
-        if(inner_index > (1ULL<<innerBitSize)) {
+        if(inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }
