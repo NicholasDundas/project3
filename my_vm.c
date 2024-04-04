@@ -108,7 +108,7 @@ page_ent get_next_avail() {
 }
 
 //attempts to map a page with a given virtual address
-//returns new page number allocated
+//returns phyiscal address allocated
 //returns 0 on failure
 unsigned int page_map(unsigned int va){
     if(mem == NULL) {
@@ -132,7 +132,7 @@ unsigned int page_map(unsigned int va){
         flip_bit_at_index(&membitmap[temp / 8],temp % 8); 
        // memset(&mem[temp * PAGE_SIZE],0,(1ULL<<offsetSize)); // no point in setting phyiscal pages to zero, leave that to user
     }
-    return &mem[inner_page_addr * PAGE_SIZE];
+    return translate(va);
 }
 
 unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset) { 
@@ -200,7 +200,6 @@ void* t_malloc(size_t n) {
         inner_index++;
 
     }
-    translate(va);
     return (void*)va;
 }
 
@@ -230,10 +229,10 @@ int put_value(unsigned int vp, void *val, size_t n) {
     if (val == NULL || vp == 0)
         return -1; // Invalid input
     size_t left = n; //how many bytes left to allocate
-    unsigned long req_pages = n / PAGE_SIZE;
     unsigned long offset = bitToLong(vp,0,offsetSize);
     unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
     unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned long req_pages = (n + offset) / PAGE_SIZE;
     void* dst;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
     while(req_pages--) {   
@@ -260,10 +259,10 @@ int get_value(unsigned int vp, void *dst, size_t n) {
     if (dst == NULL || vp == 0)
         return -1; // Invalid input
     size_t left = n; //how many bytes left to allocate
-    unsigned long req_pages = n / PAGE_SIZE;
     unsigned long offset = bitToLong(vp,0,offsetSize);
     unsigned long inner_index = bitToLong(vp,offsetSize,innerBitSize);
     unsigned long page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned long req_pages = (n + offset) / PAGE_SIZE;
     void* src;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
     while(req_pages--) {   
@@ -316,3 +315,33 @@ void print_TLB_missrate(){
     //TODO: Finish
 }
 
+unsigned int tu_malloc(size_t n) {
+    return (unsigned int)t_malloc(n);
+}
+
+//Prints Page table and their contents
+void print_mem() {
+    printf("PAGE DIRECTORY:\n");
+    printf("PT = Page Table, PP = Physical Page\n");
+    printf("Number indicate Physical Page\n");
+    for(size_t i = 0; i < page_table_size; i++) {
+        if(outer_page != 0) {
+            printf("  PT:%u\n",outer_page[i]);
+            for(size_t y = 0; y < (1<<innerBitSize);y++) {
+                if(*(page_ent*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(page_ent)] != 0) {
+                    printf("    PP:%u\n",*(page_ent*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(page_ent)]);
+                }
+            }
+        }
+    }
+}
+
+void print_page(page_ent p,size_t len) {
+    printf("PAGE: %u",p);
+    for(size_t i = 0; i < PAGE_SIZE; i++) {
+        if(i % len == 0) printf("\n  ");
+        else printf(" ");
+        printf("%2x",mem[p * PAGE_SIZE + i]);
+    }
+    printf("\n");
+}
