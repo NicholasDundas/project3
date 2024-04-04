@@ -1,7 +1,5 @@
 #include "../my_vm.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
 #define PAGE_SIZE (1<<13)
 
 int main() {

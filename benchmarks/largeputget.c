@@ -1,14 +1,13 @@
 #include "../my_vm.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 int main() {
     set_physical_mem();
     
     
-    uint8_t* i = malloc(1<<16);
-    uint8_t* b = malloc(1<<16);
+    char* i = malloc(1<<16);
+    char* b = malloc(1<<16);
     memset(i,'A',(1<<16));
     unsigned int test = tu_malloc((1<<16));
     put_value(test, i, (1<<16));

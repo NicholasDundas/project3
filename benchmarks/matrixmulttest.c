@@ -1,10 +1,5 @@
 #include "../my_vm.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#define PAGE_SIZE (1<<13)
-
-#define MATRIX_SIZE 3
 
 void print_matrix(unsigned int vp, size_t rows, size_t cols) {
     for (size_t i = 0; i < rows; ++i) {
@@ -38,6 +33,11 @@ int main() {
         put_value(b + i * sizeof(unsigned int), &i, sizeof(unsigned int));
     }
 
+    printf("Mat a:\n");
+    print_matrix(a, l, m);
+
+    printf("Mat b:\n");
+    print_matrix(b, m, n);
     // Multiply
     mat_mult(a, b, c, l, m, n);
 
@@ -50,5 +50,8 @@ int main() {
     t_free(b, m * n * sizeof(unsigned int));
     t_free(c, l * n * sizeof(unsigned int));
 
+    printf("TLB missrate: ");
+    print_TLB_missrate();
+    printf("\n");
     return 0;
 }
