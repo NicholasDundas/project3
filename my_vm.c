@@ -211,8 +211,7 @@ void* t_malloc(size_t n) {
     unsigned int page_dir_index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     while(req_pages--) { //allocate all the required pages
         page_map(indexToVA(page_dir_index,inner_index,0));
-        inner_index++;
-        if(inner_index >= (1ULL<<innerBitSize)) {
+        if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }
@@ -239,8 +238,7 @@ int t_free(unsigned int vp, size_t n){
         unsigned int page = (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]);
         if(page == 0) return -1;
         flip_bit_at_index(&membitmap[page / 8],page % 8); 
-        inner_index++;
-        if(inner_index >= (1ULL<<innerBitSize)) {
+        if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             if(is_page_table_empty(outer_page[page_dir_index])) {
                 flip_bit_at_index(&membitmap[outer_page[page_dir_index] / 8],outer_page[page_dir_index] % 8);
@@ -272,8 +270,7 @@ int put_value(unsigned int vp, void *val, size_t n) {
         memmove(dst,&((unsigned char*)val)[n-left],PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
         left-=PAGE_SIZE-offset;
         offset = 0;
-        inner_index++;
-        if(inner_index >= (1ULL<<innerBitSize)) {
+        if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }
@@ -302,8 +299,7 @@ int get_value(unsigned int vp, void *dst, size_t n) {
         memmove(&((unsigned char*)dst)[n-left],src,PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
         left-=PAGE_SIZE-offset;
         offset = 0;
-        inner_index++;
-        if(inner_index >= (1ULL<<innerBitSize)) {
+        if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
         }

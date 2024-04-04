@@ -1,32 +1,23 @@
 #include "../my_vm.h"
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#define PAGE_SIZE (1<<13)
 
 int main() {
 
     set_physical_mem();
     
-    int* test, *prev;
-    test = t_malloc(sizeof(int));
-    prev = test;
-    printf("test malloc'd:%d\n",*(int*)translate((unsigned int)test));
-    printf("prev malloc'd:%d\n",*(int*)translate((unsigned int)prev));
-    *(int*)translate((unsigned int)test) = 5;
-    printf("test assigned:%d\n",*(int*)translate((unsigned int)test));
-    printf("prev assigned:%d\n",*(int*)translate((unsigned int)prev));
-    int res = t_free((unsigned int)test,sizeof(int));
-    printf("test freed:%d\n",*(int*)translate((unsigned int)test));
-    printf("prev freed:%d\n",*(int*)translate((unsigned int)prev));
-    printf("t_free returned:%d\n",res);
-    printf("attempted double t_free for test returned:%d\n",t_free(test,sizeof(int)));
-    test = t_malloc(3);
-    printf("test malloc'd 2nd:%d\n",*(int*)translate((unsigned int)test));
-    printf("prev malloc'd 2nd:%d\n",*(int*)translate((unsigned int)prev));
-    *(int*)translate((unsigned int)test) = 15;
-    printf("test assigned 2nd:%d\n",*(int*)translate((unsigned int)test));
-    printf("prev assigned 2nd:%d\n",*(int*)translate((unsigned int)prev));
-    printf("attempted t_free for random address 0x5005320021 returned:%d\n",t_free(0x50050021,50));
+    void* tests[7];
+    tests[0] = t_malloc(300*PAGE_SIZE);
+    tests[1] = t_malloc(300*PAGE_SIZE);
+    tests[2] = t_malloc(300*PAGE_SIZE);
+    tests[3] = t_malloc(4096*PAGE_SIZE);
+    tests[4] = t_malloc((1ULL<<30));
+    tests[5] = t_malloc(50);
+    tests[6] = t_malloc(1);
+    for(int i = 0; i < sizeof(tests)/sizeof(tests[0]); i++) {
+        printf("Tests[%d]: %p\n",i,tests[i]);
+        print_va((unsigned int)tests[i]);
+    }
     printf("TLB missrate: ");
     print_TLB_missrate();
     printf("\n");
