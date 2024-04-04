@@ -6,16 +6,17 @@
 int main() {
     set_physical_mem();
     
-    
-    uint8_t* i = malloc(1<<14);
-    uint8_t* b = malloc(1<<14);
-    memset(i,'A',(1<<14));
-    unsigned int test = tu_malloc((1<<14));
-    put_value(test, i, (1<<14));
-    get_value(test, b, (1<<14));
-    test = t_free(test,(1<<14));
-    printf("Got value: %c\n",b[8193]);
-    free(i);
-    free(b);
+    uint8_t mat_a[3][3] = {{1,2,3}, {4,5,6}, {7,8,9}};
+    uint8_t mat_b[3][3];
+    unsigned int test = tu_malloc(sizeof(mat_a));
+    put_value(test, &mat_a, sizeof(mat_a));
+    get_value(test, &mat_b, sizeof(mat_a));
+    test = t_free(test,sizeof(mat_a));
+    for(size_t y = 0; y < sizeof(mat_a)/sizeof(mat_a[0]); y++) {
+        for(size_t x = 0; x < sizeof(mat_a[0]); x++) {
+            printf("%u ",(unsigned int)mat_b[y][x]);
+        }
+        printf("\n");
+    }
     return 0;
 }

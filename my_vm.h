@@ -6,7 +6,7 @@
 #define MAX_MEMSIZE (1ULL<<32)
 #define MEMSIZE (1ULL<<30)
 #define TLB_ENTRIES 256
-
+typedef uint32_t page_ent ;
 void set_physical_mem();
 
 void* translate(unsigned long va);
@@ -30,6 +30,13 @@ int check_TLB(unsigned int vpage);
 void print_TLB_missrate();
 
 unsigned int tu_malloc(size_t n);
-unsigned long indexToVA(unsigned long page_dir_index,unsigned long page_table_index, unsigned long offset);
 void print_va(unsigned long va);
+//prints out page directory and page tables with any physical pages they are mapped to
+void print_mem();
+//print out a physical page p with format
+//PAGE:p
+//x x x x...(len times)
+//x x x x...
+//...
+void print_page(page_ent p,size_t len);
 #endif

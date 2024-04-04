@@ -11,6 +11,6 @@ int main() {
     put_value(test, &i, sizeof(i));
     get_value(test, &res, sizeof(res));
     test = t_free(test,sizeof(i));
-    printf("Got value: %d",res);
+    printf("Got value: %d\n",res);
     return 0;
 }

@@ -2,12 +2,6 @@
     "files.associations": {
         "*.h": "c",
         "*.c": "c",
-        "cmath": "c",
-        "chrono": "c",
-        "variant": "c",
-        "ratio": "c",
-        "*.tcc": "c",
-        "bitset": "c"
     },
     "cmake.configureOnOpen": false
 }
