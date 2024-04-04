@@ -287,7 +287,21 @@ int get_value(unsigned int vp, void *dst, size_t n) {
 }
 
 void mat_mult(unsigned int a, unsigned int b, unsigned int c, size_t l, size_t m, size_t n){
-    //TODO: Finish
+    for (size_t i = 0; i < l; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            unsigned int sum = 0;
+            for (size_t k = 0; k < m; ++k) {
+                unsigned int value_a;
+                get_value(a + (i * m + k) * sizeof(unsigned int), &value_a, sizeof(unsigned int));
+                unsigned int value_b;
+                get_value(b + (k * n + j) * sizeof(unsigned int), &value_b, sizeof(unsigned int));
+                sum += value_a * value_b;
+            }
+            put_value(c + (i * n + j) * sizeof(unsigned int), &sum, sizeof(unsigned int));
+        }
+    }
+
+    return;
 }
 
 void add_TLB(unsigned int vpage, unsigned int ppage){
