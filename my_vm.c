@@ -9,7 +9,6 @@
 #include <math.h> //log2, ceil
 #include <string.h> //memset
 #include <stdio.h> //printf
-//TODO: Define static variables and structs, include headers, etc.
 #define PAGE_SIZE (1ULL<<13) 
 
 typedef struct tlb_ent { //stores tlb entries
@@ -103,12 +102,12 @@ void print_va(unsigned int va) {
 //if an invalid address is given it returns &mem
 void* translate(unsigned int va) {
     unsigned int offset = bitToLong(va,0,offsetSize);
-    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     if(check_TLB((va >> offsetSize))) {
         tlb_hit++;
         return (void*)&mem[tlb[(va >> offsetSize) % TLB_ENTRIES].pp * PAGE_SIZE + offset];
     }
+    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
+    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     if(outer_page[index] == 0) return NULL;
     unsigned int inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(unsigned int)]; //points to some frame
     tlb_miss++;
@@ -221,7 +220,7 @@ void* t_malloc(size_t n) {
 
 //returns whether all values of a page table are empty (IE pointing to 0)
 int is_page_table_empty(unsigned int pagenum) {
-    unsigned int* page_ent = &mem[pagenum * PAGE_SIZE];
+    unsigned int* page_ent = (unsigned int*)&mem[pagenum * PAGE_SIZE];
     for(size_t i = 0; i < (1<<innerBitSize); i--) {
         if(page_ent[i] != 0) return 0;
     }
