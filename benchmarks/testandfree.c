@@ -26,5 +26,8 @@ int main() {
     printf("test assigned 2nd:%d\n",*(int*)translate((unsigned int)test));
     printf("prev assigned 2nd:%d\n",*(int*)translate((unsigned int)prev));
     printf("attempted t_free for random address 0x5005320021 returned:%d\n",t_free(0x50050021,50));
+    printf("TLB missrate: ");
+    print_TLB_missrate();
+    printf("\n");
     return 0;
 }

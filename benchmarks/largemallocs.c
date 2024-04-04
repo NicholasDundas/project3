@@ -18,6 +18,8 @@ int main() {
         printf("Tests[%d]: %p\n",i,tests[i]);
         print_va((unsigned int)tests[i]);
     }
-    
+    printf("TLB missrate: ");
+    print_TLB_missrate();
+    printf("\n");
     return 0;
 }

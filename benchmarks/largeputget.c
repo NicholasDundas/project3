@@ -16,5 +16,8 @@ int main() {
     printf("Got value: %c\n",b[1<<15]);
     free(i);
     free(b);
+    printf("TLB missrate: ");
+    print_TLB_missrate();
+    printf("\n");
     return 0;
 }

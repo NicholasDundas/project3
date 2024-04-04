@@ -1,59 +1,20 @@
 #include "../my_vm.h"
 #include <stdio.h>
-
-void print_matrix(unsigned int vp, size_t rows, size_t cols) {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
-            unsigned int value;
-            get_value(vp + (i * cols + j) * sizeof(unsigned int), &value, sizeof(unsigned int));
-            printf("%u ", value);
-        }
-        printf("\n");
-    }
-}
-
 int main() {
-
     set_physical_mem();
     
-    size_t l = 2, m = 7, n = 2; // Dimensions of the matrices
-
-    // Allocate memory for the matrices
-    unsigned int a = (unsigned int)t_malloc(l * m * sizeof(unsigned int));
-    unsigned int b = (unsigned int)t_malloc(m * n * sizeof(unsigned int));
-    unsigned int c = (unsigned int)t_malloc(l * n * sizeof(unsigned int));
-
-    // Initialize matrix a
-    for (size_t i = 0; i < l * m; ++i) {
-        put_value(a + i * sizeof(unsigned int), &i, sizeof(unsigned int));
-    }
-
-    // Initialize matrix b
-    for (size_t i = 0; i < m * n; ++i) {
-        put_value(b + i * sizeof(unsigned int), &i, sizeof(unsigned int));
-    }
-
-    printf("Mat a:\n");
-    print_matrix(a, l, m);
-
-    printf("Mat b:\n");
-    print_matrix(b, m, n);
-    //Do some work...
-    for(size_t i = 0; i < 5; i++) {
-        // Multiply
-        mat_mult(a, b, c, l, m, n);
-    }
-    // Print result
-    printf("Result of matrix multiplication:\n");
-    print_matrix(c, l, n);
-
-    // Free memory
-    t_free(a, l * m * sizeof(unsigned int));
-    t_free(b, m * n * sizeof(unsigned int));
-    t_free(c, l * n * sizeof(unsigned int));
-
+    unsigned int test;
+    int i = 5, res;
+    print_mem();
+    test = tu_malloc(sizeof(i));
+    put_value(test, &i, sizeof(i));
+    get_value(test, &res, sizeof(res));
+    print_mem();
+    test = t_free(test,sizeof(i));
+    printf("Got value: %d\n",res);
     printf("TLB missrate: ");
     print_TLB_missrate();
     printf("\n");
+    print_mem();
     return 0;
 }

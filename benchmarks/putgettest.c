@@ -10,5 +10,8 @@ int main() {
     get_value(test, &res, sizeof(res));
     test = t_free(test,sizeof(i));
     printf("Got value: %d\n",res);
+    printf("TLB missrate: ");
+    print_TLB_missrate();
+    printf("\n");
     return 0;
 }
