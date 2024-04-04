@@ -9,7 +9,7 @@
 #include <math.h> //log2, ceil
 #include <string.h> //memset
 #include <stdio.h> //printf
-#define PAGE_SIZE (1ULL<<4) 
+#define PAGE_SIZE (1ULL<<13) 
 
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given
