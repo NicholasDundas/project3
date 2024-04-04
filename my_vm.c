@@ -105,14 +105,14 @@ void* translate(unsigned int va) {
     unsigned int offset = bitToLong(va,0,offsetSize);
     unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
     unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
-    if(check_TLB(va)) {
+    if(check_TLB((va >> offsetSize))) {
         tlb_hit++;
-        return (void*)&mem[tlb[va % TLB_ENTRIES].pp * PAGE_SIZE + offset];
+        return (void*)&mem[tlb[(va >> offsetSize) % TLB_ENTRIES].pp * PAGE_SIZE + offset];
     }
     if(outer_page[index] == 0) return NULL;
     unsigned int inner_page = mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(unsigned int)]; //points to some frame
     tlb_miss++;
-    add_TLB(va,inner_page);
+    add_TLB((va >> offsetSize),inner_page);
     if(inner_page == 0) return NULL;
     return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
