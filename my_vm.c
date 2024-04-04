@@ -10,7 +10,7 @@
 #include <string.h> //memset
 #include <stdio.h> //printf
 //TODO: Define static variables and structs, include headers, etc.
-#define PAGE_SIZE (1ULL<<13) 
+#define PAGE_SIZE (1ULL<<6) 
 
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given
@@ -156,11 +156,7 @@ unsigned int page_map(unsigned int va){
 }
 
 unsigned int indexToVA(unsigned int page_dir_index,unsigned int page_table_index, unsigned int offset) { 
-    unsigned int offsetmask = ((1ULL<<offsetSize)-1) & offset;
-    unsigned int page_table_index_mask = ((1ULL<<innerBitSize+offsetSize)-1) & (page_table_index<<offsetSize);
-    unsigned int page_dir_index_mask = ((1ULL<<innerBitSize+offsetSize+outerBitSize)-1) & (page_dir_index<<innerBitSize+offsetSize);
-    unsigned int num = (page_dir_index_mask | page_table_index_mask | offsetmask);
-    return num;
+    return (page_dir_index<<innerBitSize+offsetSize) | (page_table_index<<offsetSize) | offset;
 }
 
 //finds next virtual address large enough for n pages
@@ -349,6 +345,9 @@ void print_TLB_missrate(){
     printf("%Lf",tlb_miss/(long double)(tlb_hit+tlb_miss));
 }
 
+//DEBUG FUNCTIONS
+
+//No need to cast
 unsigned int tu_malloc(size_t n) {
     return (unsigned int)t_malloc(n);
 }
@@ -357,9 +356,11 @@ unsigned int tu_malloc(size_t n) {
 void print_mem() {
     printf("PAGE DIRECTORY:\n");
     printf("PT = Page Table, PP = Physical Page\n");
-    printf("Number indicate Physical Page\n");
+    printf("Number indicates Physical Page\n");
+    int empty = 1;
     for(size_t i = 0; i < page_dir_size; i++) {
-        if(outer_page != 0) {
+        if(outer_page[i] != 0) {
+            empty = 0;
             printf("  PT:%u\n",outer_page[i]);
             for(size_t y = 0; y < (1<<innerBitSize);y++) {
                 if(*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] != 0) {
@@ -368,8 +369,12 @@ void print_mem() {
             }
         }
     }
+    if(empty) {
+        printf("  Empty page directory!\n");
+    }
 }
 
+//Prints page directory and page tables contained (but not their contents)
 void print_page(unsigned int p,size_t len) {
     printf("PAGE: %u",p);
     for(size_t i = 0; i < PAGE_SIZE; i++) {
