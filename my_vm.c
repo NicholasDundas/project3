@@ -10,7 +10,7 @@
 #include <string.h> //memset
 #include <stdio.h> //printf
 //TODO: Define static variables and structs, include headers, etc.
-#define PAGE_SIZE (1ULL<<6) 
+#define PAGE_SIZE (1ULL<<13) 
 
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given

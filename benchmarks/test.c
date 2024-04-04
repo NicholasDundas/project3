@@ -10,7 +10,7 @@ int main() {
     tests[0] = t_malloc(300*PAGE_SIZE);
     tests[1] = t_malloc(300*PAGE_SIZE);
     tests[2] = t_malloc(300*PAGE_SIZE);
-    tests[3] = t_malloc(5*PAGE_SIZE);
+    tests[3] = t_malloc(4096*PAGE_SIZE);
     tests[4] = t_malloc((1ULL<<30));
     tests[5] = t_malloc(50);
     tests[6] = t_malloc(1);
