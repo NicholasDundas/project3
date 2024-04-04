@@ -1,55 +1,32 @@
 #include "../my_vm.h"
 #include <stdio.h>
-
-void print_matrix(unsigned int vp, size_t rows, size_t cols) {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
-            unsigned int value;
-            get_value(vp + (i * cols + j) * sizeof(unsigned int), &value, sizeof(unsigned int));
-            printf("%u ", value);
-        }
-        printf("\n");
-    }
-}
+#include <stdlib.h>
+#include <stdint.h>
 
 int main() {
 
     set_physical_mem();
     
-    size_t l = 10, m = 15, n = 10; // Dimensions of the matrices
-
-    // Allocate memory for the matrices
-    unsigned int a = (unsigned int)t_malloc(l * m * sizeof(unsigned int));
-    unsigned int b = (unsigned int)t_malloc(m * n * sizeof(unsigned int));
-    unsigned int c = (unsigned int)t_malloc(l * n * sizeof(unsigned int));
-
-    // Initialize matrix a
-    for (size_t i = 0; i < l * m; ++i) {
-        put_value(a + i * sizeof(unsigned int), &i, sizeof(unsigned int));
-    }
-
-    // Initialize matrix b
-    for (size_t i = 0; i < m * n; ++i) {
-        put_value(b + i * sizeof(unsigned int), &i, sizeof(unsigned int));
-    }
-
-    printf("Mat a:\n");
-    print_matrix(a, l, m);
-
-    printf("Mat b:\n");
-    print_matrix(b, m, n);
-    // Multiply
-    mat_mult(a, b, c, l, m, n);
-
-    // Print result
-    printf("Result of matrix multiplication:\n");
-    print_matrix(c, l, n);
-
-    // Free memory
-    t_free(a, l * m * sizeof(unsigned int));
-    t_free(b, m * n * sizeof(unsigned int));
-    t_free(c, l * n * sizeof(unsigned int));
-
+    int* test, *prev;
+    test = t_malloc(sizeof(int));
+    prev = test;
+    printf("test malloc'd:%d\n",*(int*)translate((unsigned int)test));
+    printf("prev malloc'd:%d\n",*(int*)translate((unsigned int)prev));
+    *(int*)translate((unsigned int)test) = 5;
+    printf("test assigned:%d\n",*(int*)translate((unsigned int)test));
+    printf("prev assigned:%d\n",*(int*)translate((unsigned int)prev));
+    int res = t_free((unsigned int)test,sizeof(int));
+    printf("test freed:%d\n",*(int*)translate((unsigned int)test));
+    printf("prev freed:%d\n",*(int*)translate((unsigned int)prev));
+    printf("t_free returned:%d\n",res);
+    printf("attempted double t_free for test returned:%d\n",t_free(test,sizeof(int)));
+    test = t_malloc(3);
+    printf("test malloc'd 2nd:%d\n",*(int*)translate((unsigned int)test));
+    printf("prev malloc'd 2nd:%d\n",*(int*)translate((unsigned int)prev));
+    *(int*)translate((unsigned int)test) = 15;
+    printf("test assigned 2nd:%d\n",*(int*)translate((unsigned int)test));
+    printf("prev assigned 2nd:%d\n",*(int*)translate((unsigned int)prev));
+    printf("attempted t_free for random address 0x5005320021 returned:%d\n",t_free(0x50050021,50));
     printf("TLB missrate: ");
     print_TLB_missrate();
     printf("\n");

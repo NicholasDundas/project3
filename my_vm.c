@@ -9,8 +9,6 @@
 #include <math.h> //log2, ceil
 #include <string.h> //memset
 #include <stdio.h> //printf
-#define PAGE_SIZE (1ULL<<13) 
-
 typedef struct tlb_ent { //stores tlb entries
     unsigned int vp; //virtual page given
     unsigned int pp; //physical page stored
@@ -68,8 +66,12 @@ unsigned int bitToLong(unsigned int num, unsigned int start, unsigned int len) {
     return ((1 << len) - 1) & (num >> start);
 }
 
+void cleanup(void) {
+    free(mem);
+    free(membitmap);
+}
 
-void set_physical_mem(){
+void set_physical_mem(void){
     pageAmt = MEMSIZE/PAGE_SIZE; //num of pages for physical memory
     offsetSize = (unsigned int)log2l(PAGE_SIZE);
     outerBitSize = (unsigned int)log2l((pageAmt * sizeof(unsigned int))/PAGE_SIZE);
@@ -90,6 +92,7 @@ void set_physical_mem(){
         flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for tlb
     }
     memset(outer_page,0,sizeof(unsigned int)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
+    atexit(cleanup);
 }
 //debug print
 void print_va(unsigned int va) {
@@ -340,19 +343,18 @@ int check_TLB(unsigned int vpage){
     return tlb[vpage % TLB_ENTRIES].vp == vpage;
 }
 
-void print_TLB_missrate(){
+void print_TLB_missrate(void){
     printf("%Lf",tlb_miss/(long double)(tlb_hit+tlb_miss));
 }
 
 //DEBUG FUNCTIONS
-
 //No need to cast
 unsigned int tu_malloc(size_t n) {
     return (unsigned int)t_malloc(n);
 }
 
 //Prints Page table and their contents
-void print_mem() {
+void print_mem(void) {
     printf("PAGE DIRECTORY:\n");
     printf("PT = Page Table, PP = Physical Page\n");
     printf("Number indicates Physical Page\n");

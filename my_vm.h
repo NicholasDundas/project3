@@ -4,8 +4,11 @@
 #include <stddef.h>
 #define MAX_MEMSIZE (1ULL<<32)
 #define MEMSIZE (1ULL<<30)
+
+#define PAGE_SIZE (1ULL<<13) 
 #define TLB_ENTRIES 256
-void set_physical_mem();
+
+void set_physical_mem(void);
 
 void* translate(unsigned int va);
 
@@ -25,12 +28,14 @@ void add_TLB(unsigned int vpage, unsigned int ppage);
 
 int check_TLB(unsigned int vpage);
 
-void print_TLB_missrate();
+void print_TLB_missrate(void);
 
+//wrapper for t_malloc equivalent to (unsigned int)t_malloc(n)
 unsigned int tu_malloc(size_t n);
+//print a virtual address into its components
 void print_va(unsigned int va);
 //prints out page directory and page tables with any physical pages they are mapped to
-void print_mem();
+void print_mem(void);
 //print out a physical page p with format
 //PAGE:p
 //x x x x...(len times)
