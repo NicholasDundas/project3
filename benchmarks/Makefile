@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g -w -m32
 
-all:: clean test bitTests testandfree largemallocs putgettest largeputget matrixmulttest tlbtest
+all:: clean test bittests testandfree largemallocs putgettest largeputget matrixmulttest tlbtest
 
 tlbtest:
 	$(CC) $(CFLAGS) -o tlbtest tlbtest.c -L../ -l:my_vm.a -lm 

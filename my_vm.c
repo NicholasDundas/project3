@@ -71,6 +71,9 @@ void cleanup(void) {
     free(membitmap);
 }
 void set_physical_mem(void){
+    if(mem) cleanup();
+    tlb_hit = 0;
+    tlb_miss = 0;
     pageAmt = MEMSIZE/PAGE_SIZE; //num of pages for physical memory
     offsetSize = (unsigned int)log2l(PAGE_SIZE);
     outerBitSize = (unsigned int)log2l((pageAmt * sizeof(unsigned int))/PAGE_SIZE);
@@ -90,7 +93,8 @@ void set_physical_mem(void){
     for(;i < page_dir_size + tlb_size;i++) {
         flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for tlb
     }
-    memset(outer_page,0,sizeof(unsigned int)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
+    memset(outer_page,0,page_dir_size * PAGE_SIZE); //Set page directory to point to page 0 meaning nothing
+    memset(tlb,0,tlb_size * PAGE_SIZE); //Set all tlb entries to 0
     atexit(cleanup);
 }
 
@@ -150,19 +154,19 @@ unsigned int page_map(unsigned int va){
     return *(unsigned int*)&mem[inner_page_addr];
 }
 
-unsigned int indexToVA(unsigned int page_dir_index,unsigned int page_table_index, unsigned int offset) { 
+unsigned int index_to_va(unsigned int page_dir_index,unsigned int page_table_index, unsigned int offset) { 
     return (page_dir_index<<innerBitSize+offsetSize) | (page_table_index<<offsetSize) | offset;
 }
 
 //finds enough contigous page table entries large enough for n pages
-unsigned int findContSpace(size_t n) {
+unsigned int find_cont_space(size_t n) {
     unsigned int count = 0; //keeps track of how many contigous pages we allocated
     unsigned int va = 0; //virtual address we return
     unsigned int page_dir_index = 0; //index into page directory
     unsigned int page_table_index = get_next_avail(); //index into page table (we start after the pages allocated for page directory)
     while(n > count && page_dir_index < (1ULL<<outerBitSize)) {
         if(outer_page[page_dir_index] == 0) { //Empty page dir, assume we allocate it entirely
-            if(!va) va = indexToVA(page_dir_index,page_table_index,0);
+            if(!va) va = index_to_va(page_dir_index,page_table_index,0);
             page_table_index = (1ULL<<innerBitSize);
             count += (1ULL<<innerBitSize);
         }
@@ -177,7 +181,7 @@ unsigned int findContSpace(size_t n) {
         while(n > count 
                 && page_table_index < (1ULL<<innerBitSize) 
                 && (*(unsigned int*)&mem[inner_page + sizeof(unsigned int) * page_table_index]) == 0) {
-            if(!va) va = indexToVA(page_dir_index,page_table_index,0);
+            if(!va) va = index_to_va(page_dir_index,page_table_index,0);
             page_table_index++;        
             count++;
         }
@@ -198,12 +202,12 @@ void* t_malloc(size_t n) {
     }
     if(n == 0) return NULL; //Allocate nothing
     unsigned int req_pages = n / PAGE_SIZE + (n % PAGE_SIZE ? 1 : 0);
-    unsigned int va = findContSpace(req_pages);
+    unsigned int va = find_cont_space(req_pages);
     if(!va) return 0; //No contigous space available
     unsigned int inner_index = bitToLong(va,offsetSize,innerBitSize);
     unsigned int page_dir_index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
     while(req_pages--) { //allocate all the required pages
-        page_map(indexToVA(page_dir_index,inner_index,0));
+        page_map(index_to_va(page_dir_index,inner_index,0));
         if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             page_dir_index++;
@@ -259,7 +263,7 @@ int put_value(unsigned int vp, void *val, size_t n) {
     void* dst;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
     while(req_pages--) {   
-        dst = translate(indexToVA(page_dir_index,inner_index,offset));
+        dst = translate(index_to_va(page_dir_index,inner_index,offset));
         if(dst == NULL) return -1; //invalid page found
         memmove(dst,&((unsigned char*)val)[n-left],PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
         left-=PAGE_SIZE-offset;
@@ -270,7 +274,7 @@ int put_value(unsigned int vp, void *val, size_t n) {
         }
     }
     if(left > 0) { //copy remaining bytes
-        dst = translate(indexToVA(page_dir_index,inner_index,offset)); 
+        dst = translate(index_to_va(page_dir_index,inner_index,offset)); 
         if(dst == NULL) return -1; //invalid page found
         memmove(dst,&((unsigned char*)val)[n-left],left); 
     }
@@ -288,7 +292,7 @@ int get_value(unsigned int vp, void *dst, size_t n) {
     void* src;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
     while(req_pages--) {   
-        src = translate(indexToVA(page_dir_index,inner_index,offset));
+        src = translate(index_to_va(page_dir_index,inner_index,offset));
         if(src == NULL) return -1; //invalid page found
         memmove(&((unsigned char*)dst)[n-left],src,PAGE_SIZE-offset); //Copy PAGE_SIZE of memory (offset incase we index into page)
         left-=PAGE_SIZE-offset;
@@ -299,7 +303,7 @@ int get_value(unsigned int vp, void *dst, size_t n) {
         }
     }
     if(left > 0) { //copy remaining bytes
-        src = translate(indexToVA(page_dir_index,inner_index,offset)); 
+        src = translate(index_to_va(page_dir_index,inner_index,offset)); 
         if(src == NULL) return -1; //invalid page found
         memmove(&((unsigned char*)dst)[n-left],src,left); 
     }
