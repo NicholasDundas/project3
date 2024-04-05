@@ -162,7 +162,7 @@ unsigned int indexToVA(unsigned int page_dir_index,unsigned int page_table_index
     return (page_dir_index<<innerBitSize+offsetSize) | (page_table_index<<offsetSize) | offset;
 }
 
-//finds next virtual address large enough for n pages
+//finds enough contigous page table entries large enough for n pages
 unsigned int findContSpace(size_t n) {
     unsigned int count = 0; //keeps track of how many contigous pages we allocated
     unsigned int va = 0; //virtual address we return
