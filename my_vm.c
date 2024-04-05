@@ -95,13 +95,7 @@ void set_physical_mem(void){
     memset(outer_page,0,sizeof(unsigned int)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
     atexit(cleanup);
 }
-//debug print
-void print_va(unsigned int va) {
-    unsigned int offset = bitToLong(va,0,offsetSize);
-    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
-    printf("offset:%u\ninner_offset:%u\npage_dir_offset:%u\n",offset,inner_offset,index);
-}
+
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
 //if an invalid address is given it returns NULL
 void* translate(unsigned int va) {
@@ -385,4 +379,12 @@ void print_page(unsigned int p,size_t len) {
         printf("%2x",mem[p * PAGE_SIZE + i]);
     }
     printf("\n");
+}
+
+//print virtual address and the components
+void print_va(unsigned int va) {
+    unsigned int offset = bitToLong(va,0,offsetSize);
+    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
+    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
+    printf("offset:%u\ninner_offset:%u\npage_dir_offset:%u\n",offset,inner_offset,index);
 }
