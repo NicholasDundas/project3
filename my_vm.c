@@ -62,7 +62,7 @@ int get_bit_at_index(char *bitmap, int index) {
  * Function 4: Converting a series of bits to a long
  * Start is the starting bit index and len is the length of the bits
  */
-unsigned int bitToLong(unsigned int num, unsigned int start, unsigned int len) {
+unsigned int bit_to_long(unsigned int num, unsigned int start, unsigned int len) {
     return ((1 << len) - 1) & (num >> start);
 }
 
@@ -101,13 +101,13 @@ void set_physical_mem(void){
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
 //if an invalid address is given it returns NULL
 void* translate(unsigned int va) {
-    unsigned int offset = bitToLong(va,0,offsetSize);
+    unsigned int offset = bit_to_long(va,0,offsetSize);
     if(check_TLB((va >> offsetSize))) {
         tlb_hit++;
         return (void*)&mem[tlb[(va >> offsetSize) % TLB_ENTRIES].pp * PAGE_SIZE + offset];
     }
-    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
+    unsigned int inner_offset = bit_to_long(va,offsetSize,innerBitSize);
+    unsigned int index = bit_to_long(va,offsetSize+innerBitSize,outerBitSize);
     if(outer_page[index] == 0) return NULL;
     unsigned int inner_page = *(unsigned int*)&mem[outer_page[index] * PAGE_SIZE + inner_offset * sizeof(unsigned int)]; //points to some frame
     tlb_miss++;
@@ -132,9 +132,9 @@ unsigned int page_map(unsigned int va){
     if(mem == NULL) {
         set_physical_mem();
     }
-  //  unsigned int offset = bitToLong(va,0,offsetSize); // ignored
-    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
+  //  unsigned int offset = bit_to_long(va,0,offsetSize); // ignored
+    unsigned int inner_offset = bit_to_long(va,offsetSize,innerBitSize);
+    unsigned int index = bit_to_long(va,offsetSize+innerBitSize,outerBitSize);
     
     if (outer_page[index] == 0) { //no page table found so make it!
         outer_page[index] = get_next_avail();
@@ -204,8 +204,8 @@ void* t_malloc(size_t n) {
     unsigned int req_pages = n / PAGE_SIZE + (n % PAGE_SIZE ? 1 : 0);
     unsigned int va = find_cont_space(req_pages);
     if(!va) return 0; //No contigous space available
-    unsigned int inner_index = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int page_dir_index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
+    unsigned int inner_index = bit_to_long(va,offsetSize,innerBitSize);
+    unsigned int page_dir_index = bit_to_long(va,offsetSize+innerBitSize,outerBitSize);
     while(req_pages--) { //allocate all the required pages
         page_map(index_to_va(page_dir_index,inner_index,0));
         if(++inner_index >= (1ULL<<innerBitSize)) {
@@ -228,8 +228,8 @@ int is_page_table_empty(unsigned int pagenum) {
 
 int t_free(unsigned int vp, size_t n){
     unsigned int req_pages = n / PAGE_SIZE + (n % PAGE_SIZE ? 1 : 0);
-    unsigned int inner_index = bitToLong(vp,offsetSize,innerBitSize);
-    unsigned int page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned int inner_index = bit_to_long(vp,offsetSize,innerBitSize);
+    unsigned int page_dir_index = bit_to_long(vp,offsetSize+innerBitSize,outerBitSize);
     if(outer_page[page_dir_index] == 0) return -1;
     while(req_pages--) { //deallocate all the required pages
         unsigned int page = (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]);
@@ -256,9 +256,9 @@ int put_value(unsigned int vp, void *val, size_t n) {
     if (val == NULL || vp == 0)
         return -1; // Invalid input
     size_t left = n; //how many bytes left to allocate
-    unsigned int offset = bitToLong(vp,0,offsetSize);
-    unsigned int inner_index = bitToLong(vp,offsetSize,innerBitSize);
-    unsigned int page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned int offset = bit_to_long(vp,0,offsetSize);
+    unsigned int inner_index = bit_to_long(vp,offsetSize,innerBitSize);
+    unsigned int page_dir_index = bit_to_long(vp,offsetSize+innerBitSize,outerBitSize);
     unsigned int req_pages = (n + offset) / PAGE_SIZE;
     void* dst;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
@@ -285,9 +285,9 @@ int get_value(unsigned int vp, void *dst, size_t n) {
     if (dst == NULL || vp == 0)
         return -1; // Invalid input
     size_t left = n; //how many bytes left to allocate
-    unsigned int offset = bitToLong(vp,0,offsetSize);
-    unsigned int inner_index = bitToLong(vp,offsetSize,innerBitSize);
-    unsigned int page_dir_index = bitToLong(vp,offsetSize+innerBitSize,outerBitSize);
+    unsigned int offset = bit_to_long(vp,0,offsetSize);
+    unsigned int inner_index = bit_to_long(vp,offsetSize,innerBitSize);
+    unsigned int page_dir_index = bit_to_long(vp,offsetSize+innerBitSize,outerBitSize);
     unsigned int req_pages = (n + offset) / PAGE_SIZE;
     void* src;
     if(outer_page[page_dir_index] == 0) return -1; //page table doesnt exist
@@ -358,11 +358,11 @@ void print_mem(void) {
         if(outer_page[i] != 0) {
             empty = 0;
             printf("  PT:%u\n",outer_page[i]);
-            if(get_bit_at_index(&membitmap[outer_page[i] / 8], outer_page[i] % 8) == 1) printf(" (Possible write error?)");
+            if(get_bit_at_index(&membitmap[outer_page[i] / 8], outer_page[i] % 8) == 1) printf(" (Possible error?)"); //Entry is marked free but the physical page isnt....
             for(size_t y = 0; y < (1<<innerBitSize);y++) {
                 if(*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] != 0) {
                     printf("    PP:%u\n",*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)]);
-                    if(get_bit_at_index(&membitmap[*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] / 8], *(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] % 8) == 1) printf(" (Possible write error?)");
+                    if(get_bit_at_index(&membitmap[*(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] / 8], *(unsigned int*)&mem[outer_page[i] * PAGE_SIZE + y * sizeof(unsigned int)] % 8) == 1) printf(" (Possible error?)");
                 }
             }
         }
@@ -385,8 +385,8 @@ void print_page(unsigned int p,size_t len) {
 
 //print virtual address and the components
 void print_va(unsigned int va) {
-    unsigned int offset = bitToLong(va,0,offsetSize);
-    unsigned int inner_offset = bitToLong(va,offsetSize,innerBitSize);
-    unsigned int index = bitToLong(va,offsetSize+innerBitSize,outerBitSize);
+    unsigned int offset = bit_to_long(va,0,offsetSize);
+    unsigned int inner_offset = bit_to_long(va,offsetSize,innerBitSize);
+    unsigned int index = bit_to_long(va,offsetSize+innerBitSize,outerBitSize);
     printf("offset:%u\ninner_offset:%u\npage_dir_offset:%u\n",offset,inner_offset,index);
 }
