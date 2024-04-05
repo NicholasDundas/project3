@@ -70,7 +70,6 @@ void cleanup(void) {
     free(mem);
     free(membitmap);
 }
-char* data;
 void set_physical_mem(void){
     pageAmt = MEMSIZE/PAGE_SIZE; //num of pages for physical memory
     offsetSize = (unsigned int)log2l(PAGE_SIZE);
@@ -91,7 +90,6 @@ void set_physical_mem(void){
     for(;i < page_dir_size + tlb_size;i++) {
         flip_bit_at_index(&membitmap[i / 8],i % 8); //Allocate pages for tlb
     }
-    data = &mem[(page_dir_size+tlb_size)  *PAGE_SIZE];
     memset(outer_page,0,sizeof(unsigned int)*(1ULL<<outerBitSize)); //Set page directory to point to page 0 meaning nothing
     atexit(cleanup);
 }
