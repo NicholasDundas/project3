@@ -5,7 +5,7 @@
 #define MAX_MEMSIZE (1ULL<<32)
 #define MEMSIZE (1ULL<<30)
 
-#define PAGE_SIZE (1ULL<<3) 
+#define PAGE_SIZE (1ULL<<13) 
 #define TLB_ENTRIES 256
 
 void set_physical_mem(void);

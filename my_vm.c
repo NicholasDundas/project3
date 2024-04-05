@@ -95,7 +95,7 @@ void set_physical_mem(void){
     }
     memset(outer_page,0,page_dir_size * PAGE_SIZE); //Set page directory to point to page 0 meaning nothing
     memset(tlb,0,tlb_size * PAGE_SIZE); //Set all tlb entries to 0
-    atexit(cleanup);
+    if(mem == NULL) atexit(cleanup);
 }
 
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
