@@ -103,10 +103,10 @@ void print_va(unsigned int va) {
     printf("offset:%u\ninner_offset:%u\npage_dir_offset:%u\n",offset,inner_offset,index);
 }
 //Takes a base pointer to a table or memory and virtual address and uses the bits of the va to determine where in mem it should point to
-//if an invalid address is given it returns &mem
+//if an invalid address is given it returns NULL
 void* translate(unsigned int va) {
     unsigned int offset = bitToLong(va,0,offsetSize);
-    if(0 && check_TLB((va >> offsetSize))) {
+    if(check_TLB((va >> offsetSize))) {
         tlb_hit++;
         return (void*)&mem[tlb[(va >> offsetSize) % TLB_ENTRIES].pp * PAGE_SIZE + offset];
     }
@@ -117,7 +117,6 @@ void* translate(unsigned int va) {
     tlb_miss++;
     add_TLB((va >> offsetSize),inner_page);
     if(inner_page == 0) return NULL;
-    void* test = (void*)&mem[inner_page * PAGE_SIZE + offset];
     return (void*)&mem[inner_page * PAGE_SIZE + offset];
 }
 
@@ -239,7 +238,8 @@ int t_free(unsigned int vp, size_t n){
     while(req_pages--) { //deallocate all the required pages
         unsigned int page = (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]);
         if(page == 0) return -1;
-        flip_bit_at_index(&membitmap[page / 8],page % 8); 
+        flip_bit_at_index(&membitmap[page / 8],page % 8); //mark as free
+        (*(unsigned int*)&mem[outer_page[page_dir_index] * PAGE_SIZE + inner_index * sizeof(unsigned int)]) = 0; //point page table entry to nothing
         if(++inner_index >= (1ULL<<innerBitSize)) {
             inner_index = 0;
             if(is_page_table_empty(outer_page[page_dir_index])) {

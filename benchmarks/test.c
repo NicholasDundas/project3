@@ -16,7 +16,7 @@ int main() {
 
     set_physical_mem();
     
-    size_t l = 12, m = 7, n = 12; // Dimensions of the matrices
+    size_t l = 4, m = 2, n = 4; // Dimensions of the matrices
     print_mem();
     // Allocate memory for the matrices
     unsigned int a = (unsigned int)t_malloc(l * m * sizeof(unsigned int));
